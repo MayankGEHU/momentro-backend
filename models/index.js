@@ -20,12 +20,17 @@ sequelize.authenticate()
 const User = require("./User")(sequelize, DataTypes);
 const TimeSlot = require("./TimeSlot")(sequelize, DataTypes);
 const Habit = require("./Habit")(sequelize, DataTypes);
+const UserFavPic = require("./UserFavPic")(sequelize, DataTypes);
 
-// Associations
+// Setup associations
 User.hasMany(TimeSlot, { foreignKey: "userId", onDelete: "CASCADE" });
 TimeSlot.belongsTo(User, { foreignKey: "userId" });
 
 User.hasMany(Habit, { foreignKey: "userId", onDelete: "CASCADE" });
 Habit.belongsTo(User, { foreignKey: "userId" });
 
-module.exports = { sequelize, User, TimeSlot, Habit };
+// Add association for UserFavPic
+User.hasMany(UserFavPic, { foreignKey: "userId", onDelete: "CASCADE" });
+UserFavPic.belongsTo(User, { foreignKey: "userId" });
+
+module.exports = { sequelize, User, TimeSlot, Habit, UserFavPic };
