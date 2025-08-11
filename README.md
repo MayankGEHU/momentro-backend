@@ -43,8 +43,6 @@ momentro-backend/
 └─ server.js
 ```
 
-## Getting Started
-
 ### Prerequisites
 
 - Node.js (v14 or above)
