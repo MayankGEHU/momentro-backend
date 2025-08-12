@@ -8,9 +8,14 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 const corsOptions = {
-  origin: "http://localhost:3000",
+  origin: [
+    "http://localhost:3000", // local dev
+    "https://momentro-frontend.vercel.app" // deployed frontend
+  ],
   credentials: true,
 };
+
+app.use(cors(corsOptions));
 
 
 app.use(cors(corsOptions));
@@ -26,7 +31,6 @@ app.use("/api/userfavpic", require("./routes/userFavPic"));
 sequelize
   .sync()
   .then(() => {
-    console.log("✅ PostgreSQL connected");
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
     });
