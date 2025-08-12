@@ -1,23 +1,33 @@
-const { DataTypes } = require("sequelize");
-
-module.exports = (sequelize) => {
-  return sequelize.define("Habit", {
-    id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true,
+// models/Habit.js
+module.exports = (sequelize, DataTypes) => {
+  const Habit = sequelize.define("Habit", {
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
     },
-    name: { type: DataTypes.STRING, allowNull: false },
-    description: DataTypes.TEXT,
+    description: DataTypes.STRING,
     icon: DataTypes.STRING,
-    userId: { type: DataTypes.INTEGER, allowNull: false },
-    streak: { type: DataTypes.INTEGER, defaultValue: 0 },
     weekProgress: {
-      type: DataTypes.JSON,
+      type: DataTypes.JSON, // [true, false, ...]
       defaultValue: [false, false, false, false, false, false, false],
     },
-  }, {
-    tableName: "habits",
-    timestamps: true,
+    streak: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+    },
+    lastCompletedDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    },
+    morningCompletedDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    },
+    afternoonCompletedDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    }
   });
+
+  return Habit;
 };

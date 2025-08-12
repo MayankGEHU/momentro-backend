@@ -1,107 +1,73 @@
 const express = require("express");
-const { Habit } = require("../models");
-const authenticate = require("../middleware/authenticate");
-
 const router = express.Router();
+const { Habit } = require("../models");
 
-router.get("/", authenticate, async (req, res) => {
+router.get("/", async (req, res) => {
   try {
-    const userId = req.user.userId || req.user.id; 
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    const habits = await Habit.findAll({
-      where: { userId },
-      order: [["createdAt", "ASC"]],
-    });
+    const habits = await Habit.findAll();
     res.json(habits);
   } catch (err) {
-    console.error("Error fetching habits:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: err.message });
   }
 });
 
-router.post("/", authenticate, async (req, res) => {
+router.post("/", async (req, res) => {
   try {
-    const userId = req.user.userId || req.user.id;
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    const { name, description, icon, weekProgress, streak } = req.body;
-    if (!name || !description) {
-      return res.status(400).json({ error: "Name and description required" });
-    }
-
     const habit = await Habit.create({
-      name,
-      description,
-      icon: icon || "reading", 
-      weekProgress: weekProgress || [false, false, false, false, false, false, false],
-      streak: streak || 0,
-      userId,
+      ...req.body,
+      weekProgress: req.body.weekProgress || [false, false, false, false, false, false, false],
+      morningCompletedDate: null,
+      afternoonCompletedDate: null,
+      lastCompletedDate: null,
     });
-
-    res.status(201).json(habit);
+    res.json(habit);
   } catch (err) {
-    console.error("Error creating habit:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: err.message });
   }
 });
 
-router.put("/:id", authenticate, async (req, res) => {
+router.put("/:id/toggle-day", async (req, res) => {
   try {
-    const userId = req.user.userId || req.user.id;
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+    const { dayIndex } = req.body;
+    if (dayIndex < 0 || dayIndex > 6) {
+      return res.status(400).json({ error: "Invalid day index" });
     }
 
-    const habit = await Habit.findOne({
-      where: { id: req.params.id, userId },
-    });
+    const habit = await Habit.findByPk(req.params.id);
+    if (!habit) return res.status(404).json({ error: "Habit not found" });
 
-    if (!habit) {
-      return res.status(404).json({ error: "Habit not found" });
+    let updatedProgress = Array.isArray(habit.weekProgress)
+      ? [...habit.weekProgress]
+      : JSON.parse(habit.weekProgress || "[false,false,false,false,false,false,false]");
+
+    updatedProgress[dayIndex] = !updatedProgress[dayIndex];
+
+    let updatedStreak = habit.streak;
+    if (updatedProgress[dayIndex]) {
+      updatedStreak += 1;
+    } else {
+      updatedStreak = Math.max(updatedStreak - 1, 0);
     }
 
-    const { updatedWeekProgress, updatedStreak } = req.body;
-
-    if (!updatedWeekProgress || !Array.isArray(updatedWeekProgress) || updatedWeekProgress.length !== 7) {
-      return res.status(400).json({ error: "Invalid weekProgress format" });
-    }
-    if (typeof updatedStreak !== "number") {
-      return res.status(400).json({ error: "Invalid streak value" });
-    }
-
-    habit.weekProgress = updatedWeekProgress;
+    habit.weekProgress = updatedProgress;
     habit.streak = updatedStreak;
-
     await habit.save();
 
     res.json(habit);
   } catch (err) {
-    console.error("Error updating habit:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: err.message });
   }
 });
 
-router.delete("/:id", authenticate, async (req, res) => {
+router.delete("/:id", async (req, res) => {
   try {
-    const userId = req.user.userId || req.user.id;
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
+    const habit = await Habit.findByPk(req.params.id);
+    if (!habit) return res.status(404).json({ error: "Habit not found" });
 
-    const deleted = await Habit.destroy({
-      where: { id: req.params.id, userId },
-    });
-
-    if (deleted) return res.status(204).send();
-    res.status(404).json({ error: "Habit not found" });
+    await habit.destroy();
+    res.json({ message: "Habit deleted" });
   } catch (err) {
-    console.error("Error deleting habit:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: err.message });
   }
 });
 
