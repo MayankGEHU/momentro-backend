@@ -44,7 +44,6 @@ router.post('/signup', async (req, res) => {
   }
 });
 
-// Login
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -77,5 +76,14 @@ router.post("/login", async (req, res) => {
   }
 });
 
+router.get("/logged-in-count", async (req, res) => {
+  try {
+    const count = await User.count(); 
+    res.json({ count });
+  } catch (err) {
+    console.error("Count error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 module.exports = router;
